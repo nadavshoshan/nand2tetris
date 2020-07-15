@@ -1,0 +1,88 @@
+//nadav shoshan 305355356
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+    static Array RAM,heap;
+    static int length,next,base,free;
+    /** Initializes the class. */
+    function void init() {
+        let RAM = 0;
+        let length=1;
+        let next = 0;
+        let heap = 2048;
+        let base = 2048;
+        let free = 0;
+        let heap[next]=0;
+        let heap[length]=14334;
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return RAM[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let RAM[address]=value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address if there is no fit block in the herap returns -1. */
+    function int alloc(int size) {
+        var int curBlock, nextBlock, space_size,object;
+        var boolean search;
+        // allocation has to be for positive numbers!
+        if(size<1){
+            do Sys.error(5);
+            return-1;
+        }
+        let curBlock=0;
+        let nextBlock = heap[next];
+        let space_size = heap[curBlock+length];
+        let search = true;
+        //search for place in the heap which is large enough
+        while ((space_size < (size+1) ) & (search)){
+            let curBlock = nextBlock;
+            let nextBlock = heap[curBlock+next];
+            if(nextBlock<1){
+                let search = false;
+            }
+            let space_size = heap[curBlock+length];
+        }
+
+        // set the heap accordinaly to the block which we found
+        if(space_size <(size+1)){
+            // overflow!
+            do Sys.error(6);
+        }
+        // updated new space size after allocation
+        let space_size = space_size-(size+2);
+        let heap[curBlock+length] = space_size;
+        // setting the return object
+        let object = curBlock +space_size+1;
+        let heap[object+next] = 0;
+        let heap[object+length] = size;
+        //retrurn the object adddress shifted past the next and length fields
+        return object+2+base;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        //apending the given object to the heap
+        let heap[free] = o-2;
+        //setting the new last address
+        let free = o-2-base;
+        return;
+    }    
+}
